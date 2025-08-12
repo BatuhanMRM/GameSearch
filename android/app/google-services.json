@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "102739149282",
+    "project_id": "gamesearch-c63e2",
+    "storage_bucket": "gamesearch-c63e2.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:102739149282:android:56a64d698e828f844ef9bb",
+        "android_client_info": {
+          "package_name": "Game.Search1"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD97pgHKz8pGf747yTUxf4QKEb-Biu4TDc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:102739149282:android:837fb924565a66a74ef9bb",
+        "android_client_info": {
+          "package_name": "com.example.game_reviews_2"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD97pgHKz8pGf747yTUxf4QKEb-Biu4TDc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
