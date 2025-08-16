@@ -1,16 +1,25 @@
-# game_reviews_2
+# 🎮 GameSearch
 
-A new Flutter project.
+**GameSearch** is a social mobile app currently under development for gamers.  
+It allows users to discover games, add them to favorites, rate, review, and chat with other players.
 
-## Getting Started
+> 🚧 **Status:** This project is still in development.
 
-This project is a starting point for a Flutter application.
+---
 
-A few resources to get you started if this is your first Flutter project:
+## ✨ Features
+- 🔍 **Game Search:** Easily find any game you’re looking for.
+- ⭐ **Favorites:** Save games you like.
+- 💬 **Chat:** Talk with other players.
+- 📝 **Reviews & Ratings:** Share your thoughts and rate games.
+- 📊 **Community Interaction:** Discover trending and popular games.
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+---
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## 🛠️ Technologies
+- Flutter / Dart
+- Firebase 
+
+
+
+
