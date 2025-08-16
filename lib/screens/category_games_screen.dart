@@ -8,7 +8,7 @@ class CategoryGamesScreen extends StatelessWidget {
   final String categoryId;
   final void Function(Game) onToggleFavorite;
   final List<Game> favorites;
-  final String? priceFilter; 
+  final String? priceFilter;
 
   const CategoryGamesScreen({
     super.key,
@@ -131,7 +131,7 @@ class CategoryGamesScreen extends StatelessWidget {
                         Text(
                           'Fiyat: ${game.price}',
                           style: TextStyle(
-                            color: Theme.of(context).primaryColor,
+                            color: Theme.of(context).colorScheme.onSurface,
                             fontWeight: FontWeight.bold,
                           ),
                         ),

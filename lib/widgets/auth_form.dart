@@ -1,15 +1,11 @@
 import 'package:flutter/material.dart';
 
 class AuthForm extends StatefulWidget {
-  final void Function(
-    String email,
-    String password,
-    bool isLogin,
-    String? username,
-  )
+  final Function(String email, String password, bool isLogin, String? username)
   onSubmit;
+  final bool isLoading;
 
-  const AuthForm({super.key, required this.onSubmit});
+  const AuthForm({super.key, required this.onSubmit, this.isLoading = false});
 
   @override
   State<AuthForm> createState() => _AuthFormState();
@@ -17,265 +13,209 @@ class AuthForm extends StatefulWidget {
 
 class _AuthFormState extends State<AuthForm> {
   final _formKey = GlobalKey<FormState>();
-  final _emailFocusNode = FocusNode();
-  final _passwordFocusNode = FocusNode();
-  final _usernameFocusNode = FocusNode();
-  final _confirmPasswordFocusNode = FocusNode();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _usernameController = TextEditingController();
 
   bool _isLogin = true;
-  String _email = '';
-  String _password = '';
-  String _confirmPassword = '';
-  String _username = '';
-
-  @override
-  void dispose() {
-    _emailFocusNode.dispose();
-    _passwordFocusNode.dispose();
-    _usernameFocusNode.dispose();
-    _confirmPasswordFocusNode.dispose();
-    super.dispose();
-  }
-
-  void _trySubmit() {
-    // Klavyeyi kapat
-    FocusScope.of(context).unfocus();
-
-    final isValid = _formKey.currentState?.validate() ?? false;
-    if (!isValid) return;
-
-    _formKey.currentState!.save();
-    widget.onSubmit(
-      _email.trim(),
-      _password.trim(),
-      _isLogin,
-      _isLogin ? null : _username.trim(),
-    );
-  }
+  bool _obscurePassword = true;
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        // Kartın dışına tıklandığında klavyeyi kapat
-        FocusScope.of(context).unfocus();
-      },
-      child: Card(
-        margin: EdgeInsets.all(16),
-        color: Theme.of(context).cardColor,
-        elevation: 8,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  _isLogin ? 'Giriş Yap' : 'Kayıt Ol',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).primaryColor,
-                  ),
-                ),
-                const SizedBox(height: 20),
-
-                // Email field
-                TextFormField(
-                  key: const ValueKey('email'),
-                  focusNode: _emailFocusNode,
-                  decoration: InputDecoration(
-                    labelText: 'Email',
-                    prefixIcon: Icon(Icons.email),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  keyboardType: TextInputType.emailAddress,
-                  textInputAction: TextInputAction.next,
-                  onFieldSubmitted: (_) {
-                    if (_isLogin) {
-                      FocusScope.of(context).requestFocus(_passwordFocusNode);
-                    } else {
-                      FocusScope.of(context).requestFocus(_usernameFocusNode);
-                    }
-                  },
-                  onSaved: (value) => _email = value ?? '',
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Email adresi gerekli';
-                    }
-                    if (!value.contains('@') || !value.contains('.')) {
-                      return 'Geçerli e-posta adresi girin';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-
-                // Username field (sadece kayıt olurken göster)
-                if (!_isLogin) ...[
-                  TextFormField(
-                    key: const ValueKey('username'),
-                    focusNode: _usernameFocusNode,
-                    decoration: InputDecoration(
-                      labelText: 'Kullanıcı Adı',
-                      prefixIcon: Icon(Icons.person),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
+    return Card(
+      elevation: 8,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Giriş/Kayıt toggle
+              Row(
+                children: [
+                  Expanded(
+                    child: TextButton(
+                      onPressed: widget.isLoading
+                          ? null
+                          : () {
+                              setState(() {
+                                _isLogin = true;
+                              });
+                            },
+                      style: TextButton.styleFrom(
+                        backgroundColor: _isLogin
+                            ? const Color(0xFF667eea)
+                            : Colors.transparent,
+                        foregroundColor: _isLogin ? Colors.white : Colors.grey,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
+                      child: const Text('Giriş Yap'),
                     ),
-                    textInputAction: TextInputAction.next,
-                    onFieldSubmitted: (_) {
-                      FocusScope.of(context).requestFocus(_passwordFocusNode);
-                    },
-                    onSaved: (value) => _username = value ?? '',
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Kullanıcı adı gerekli';
-                      }
-                      if (value.length < 3) {
-                        return 'Kullanıcı adı en az 3 karakter olmalı';
-                      }
-                      if (value.length > 20) {
-                        return 'Kullanıcı adı en fazla 20 karakter olmalı';
-                      }
-                      return null;
-                    },
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: TextButton(
+                      onPressed: widget.isLoading
+                          ? null
+                          : () {
+                              setState(() {
+                                _isLogin = false;
+                              });
+                            },
+                      style: TextButton.styleFrom(
+                        backgroundColor: !_isLogin
+                            ? const Color(0xFF667eea)
+                            : Colors.transparent,
+                        foregroundColor: !_isLogin ? Colors.white : Colors.grey,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text('Kayıt Ol'),
+                    ),
+                  ),
                 ],
+              ),
+              const SizedBox(height: 24),
 
-                // Password field
+              // Username field (sadece kayıt için)
+              if (!_isLogin) ...[
                 TextFormField(
-                  key: const ValueKey('password'),
-                  focusNode: _passwordFocusNode,
+                  controller: _usernameController,
+                  enabled: !widget.isLoading,
                   decoration: InputDecoration(
-                    labelText: 'Şifre',
-                    prefixIcon: Icon(Icons.lock),
+                    labelText: 'Kullanıcı Adı',
+                    prefixIcon: const Icon(Icons.person),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  obscureText: true,
-                  textInputAction: _isLogin
-                      ? TextInputAction.done
-                      : TextInputAction.next,
-                  onFieldSubmitted: (_) {
-                    if (_isLogin) {
-                      _trySubmit();
-                    } else {
-                      FocusScope.of(
-                        context,
-                      ).requestFocus(_confirmPasswordFocusNode);
-                    }
-                  },
-                  onSaved: (value) => _password = value ?? '',
-                  onChanged: (value) => _password = value,
                   validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Şifre gerekli';
+                    if (!_isLogin && (value?.isEmpty ?? true)) {
+                      return 'Kullanıcı adı gerekli';
                     }
-                    if (value.length < 6) {
-                      return 'Şifre en az 6 karakter olmalı';
-                    }
-                    if (!_isLogin &&
-                        !RegExp(
-                          r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)',
-                        ).hasMatch(value)) {
-                      return 'Şifre en az 1 küçük harf, 1 büyük harf ve 1 rakam içermeli';
+                    if (!_isLogin && (value?.length ?? 0) < 3) {
+                      return 'Kullanıcı adı en az 3 karakter olmalı';
                     }
                     return null;
                   },
                 ),
                 const SizedBox(height: 16),
-
-                // Confirm password field (sadece kayıt olurken göster)
-                if (!_isLogin) ...[
-                  TextFormField(
-                    key: const ValueKey('confirmPassword'),
-                    focusNode: _confirmPasswordFocusNode,
-                    decoration: InputDecoration(
-                      labelText: 'Şifreyi Onayla',
-                      prefixIcon: Icon(Icons.lock_outline),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    obscureText: true,
-                    textInputAction: TextInputAction.done,
-                    onFieldSubmitted: (_) => _trySubmit(),
-                    onSaved: (value) => _confirmPassword = value ?? '',
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Şifre onayı gerekli';
-                      }
-                      if (value != _password) {
-                        return 'Şifreler eşleşmiyor';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 20),
-                ] else
-                  const SizedBox(height: 20),
-
-                // Submit button
-                SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: ElevatedButton(
-                    onPressed: _trySubmit,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Theme.of(context).primaryColor,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: Text(
-                      _isLogin ? 'Giriş Yap' : 'Kayıt Ol',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // Toggle button
-                TextButton(
-                  onPressed: () {
-                    // Klavyeyi kapat
-                    FocusScope.of(context).unfocus();
-
-                    setState(() {
-                      _isLogin = !_isLogin;
-                      _formKey.currentState?.reset();
-                      _email = '';
-                      _password = '';
-                      _confirmPassword = '';
-                      _username = '';
-                    });
-                  },
-                  child: Text(
-                    _isLogin
-                        ? 'Hesabın yok mu? Kayıt ol'
-                        : 'Zaten hesabın var mı? Giriş yap',
-                    style: TextStyle(
-                      color: Theme.of(context).primaryColor,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
               ],
-            ),
+
+              // Email field
+              TextFormField(
+                controller: _emailController,
+                enabled: !widget.isLoading,
+                keyboardType: TextInputType.emailAddress,
+                decoration: InputDecoration(
+                  labelText: 'E-mail',
+                  prefixIcon: const Icon(Icons.email),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                validator: (value) {
+                  if (value?.isEmpty ?? true) return 'E-mail gerekli';
+                  if (!value!.contains('@')) return 'Geçerli e-mail giriniz';
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+
+              // Password field
+              TextFormField(
+                controller: _passwordController,
+                enabled: !widget.isLoading,
+                obscureText: _obscurePassword,
+                decoration: InputDecoration(
+                  labelText: 'Şifre',
+                  prefixIcon: const Icon(Icons.lock),
+                  suffixIcon: IconButton(
+                    onPressed: widget.isLoading
+                        ? null
+                        : () {
+                            setState(() {
+                              _obscurePassword = !_obscurePassword;
+                            });
+                          },
+                    icon: Icon(
+                      _obscurePassword
+                          ? Icons.visibility
+                          : Icons.visibility_off,
+                    ),
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                validator: (value) {
+                  if (value?.isEmpty ?? true) return 'Şifre gerekli';
+                  if (value!.length < 6) return 'Şifre en az 6 karakter olmalı';
+                  return null;
+                },
+              ),
+              const SizedBox(height: 32),
+
+              // Submit button
+              SizedBox(
+                width: double.infinity,
+                height: 56,
+                child: ElevatedButton(
+                  onPressed: widget.isLoading ? null : _handleSubmit,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF667eea),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    elevation: 4,
+                  ),
+                  child: widget.isLoading
+                      ? const SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : Text(
+                          _isLogin ? 'Giriş Yap' : 'Kayıt Ol',
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                ),
+              ),
+            ],
           ),
         ),
       ),
     );
+  }
+
+  void _handleSubmit() {
+    if (!_formKey.currentState!.validate()) return;
+
+    widget.onSubmit(
+      _emailController.text.trim(),
+      _passwordController.text,
+      _isLogin,
+      _isLogin ? null : _usernameController.text.trim(),
+    );
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    _usernameController.dispose();
+    super.dispose();
   }
 }
