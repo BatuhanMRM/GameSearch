@@ -11,11 +11,15 @@ import 'friends_screen.dart';
 class CategoriesScreen extends StatefulWidget {
   final void Function(Game) onToggleFavorite;
   final List<Game> favorites;
+  final String selectedPriceFilter; // Ekle
+  final Function(String) onFilterChanged; // Ekle
 
   const CategoriesScreen({
     super.key,
     required this.onToggleFavorite,
     required this.favorites,
+    required this.selectedPriceFilter, // Ekle
+    required this.onFilterChanged, // Ekle
   });
 
   @override
@@ -24,17 +28,6 @@ class CategoriesScreen extends StatefulWidget {
 
 class _CategoriesScreenState extends State<CategoriesScreen> {
   List<Comment> comments = List.from(dummyComments);
-  String selectedPriceFilter = 'Tümü';
-
-  void _onFilterChanged(String newFilter) {
-    setState(() {
-      selectedPriceFilter = newFilter;
-    });
-    developer.log(
-      "Ana ekranda filtre güncellendi: $newFilter",
-      name: 'CategoriesScreen',
-    );
-  }
 
   void _onAddComment(Comment newComment) {
     setState(() {
@@ -50,11 +43,8 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      drawer: PriceFilterDrawer(
-        selectedPriceFilter: selectedPriceFilter,
-        onFilterChanged: _onFilterChanged,
-      ),
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: const Text('Oyun Kategorileri'),
         backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
         actions: [
@@ -102,12 +92,12 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
           ),
 
           // Aktif filtreyi göster
-          if (selectedPriceFilter != 'Tümü')
+          if (widget.selectedPriceFilter != 'Tümü')
             Container(
               margin: const EdgeInsets.only(right: 16),
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
               decoration: BoxDecoration(
-                color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
+                color: Theme.of(context).primaryColor.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
                   color: Theme.of(context).primaryColor,
@@ -124,7 +114,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                   ),
                   const SizedBox(width: 4),
                   Text(
-                    selectedPriceFilter,
+                    widget.selectedPriceFilter,
                     style: TextStyle(
                       color: Theme.of(context).primaryColor,
                       fontSize: 12,
@@ -134,9 +124,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                   const SizedBox(width: 4),
                   GestureDetector(
                     onTap: () {
-                      setState(() {
-                        selectedPriceFilter = 'Tümü';
-                      });
+                      widget.onFilterChanged('Tümü');
                     },
                     child: Icon(
                       Icons.close,
@@ -151,11 +139,11 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
       ),
       body: Column(
         children: [
-          // Kategoriler grid'i (artık ayrı widget)
+          // Kategoriler grid'i
           CategoriesGrid(
             onToggleFavorite: widget.onToggleFavorite,
             favorites: widget.favorites,
-            selectedPriceFilter: selectedPriceFilter,
+            selectedPriceFilter: widget.selectedPriceFilter, // Geçir
           ),
 
           // Comment section

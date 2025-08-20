@@ -93,18 +93,19 @@ class _AuthScreenState extends State<AuthScreen> {
         } else {
           developer.log("Giriş başarısız", name: 'AuthScreen', level: 900);
           if (mounted) {
-            _showErrorMessage('Giriş başarısız. E-mail veya şifre yanlış.');
+            _showErrorMessage(
+              'Giriş başarısız. Email ve şifrenizi kontrol edin.',
+            );
           }
         }
       } else {
-        developer.log("Kayıt denemesi başlıyor...", name: 'AuthScreen');
+        developer.log(
+          "🚀 KAYIT BAŞLIYOR - Username: $username",
+          name: 'AuthScreen',
+        );
 
         if (username == null || username.isEmpty) {
-          developer.log("Kullanıcı adı eksik", name: 'AuthScreen', level: 900);
-          if (mounted) {
-            _showErrorMessage('Kullanıcı adı gerekli.');
-            setState(() => _isLoading = false);
-          }
+          _showErrorMessage('Kullanıcı adı gereklidir.');
           return;
         }
 
@@ -114,27 +115,37 @@ class _AuthScreenState extends State<AuthScreen> {
           displayName: username,
         );
 
-        if (result != null) {
-          developer.log("Kayıt başarılı", name: 'AuthScreen');
-          if (mounted) {
-            _showSuccessMessage('Kayıt başarılı! Hoş geldiniz.');
+        developer.log("📊 Kayıt sonucu: $result", name: 'AuthScreen');
+
+        // Kullanıcı oluşturulmuş mu kontrol et (result null olsa bile currentUser olabilir)
+        final currentUser = _authService.currentUser;
+        if (currentUser != null) {
+          developer.log(
+            "✅ Kullanıcı mevcut: ${currentUser.email}",
+            name: 'AuthScreen',
+          );
+          _showSuccessMessage('Kayıt başarılı! Hoş geldiniz, $username!');
+
+          // DisplayName manuel olarak ayarla (Firebase hatası nedeniyle)
+          try {
+            await _authService.updateDisplayName(username);
+            developer.log(
+              "📝 DisplayName manuel olarak ayarlandı",
+              name: 'AuthScreen',
+            );
+          } catch (e) {
+            developer.log(
+              "⚠️ Manuel displayName ayarlama hatası: $e",
+              name: 'AuthScreen',
+            );
           }
         } else {
-          developer.log(
-            "Kayıt başarısız olarak algılandı",
-            name: 'AuthScreen',
-            level: 900,
-          );
-          if (mounted) {
-            _showErrorMessage('Kayıt başarısız. Lütfen tekrar deneyin.');
-          }
+          _showErrorMessage('Kayıt başarısız. Lütfen tekrar deneyin.');
         }
       }
     } catch (e) {
-      developer.log("Exception yakalandı: $e", name: 'AuthScreen', level: 1000);
-      if (mounted) {
-        _showErrorMessage('Bir hata oluştu: ${e.toString()}');
-      }
+      developer.log("❌ Exception: $e", name: 'AuthScreen');
+      _showErrorMessage('Bir hata oluştu: ${e.toString()}');
     }
 
     if (mounted) {

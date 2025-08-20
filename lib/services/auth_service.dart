@@ -1,172 +1,113 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:developer' as developer;
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  // Current user getter
+  // CurrentUser property'si
   User? get currentUser => _auth.currentUser;
 
-  // Auth state stream
+  // Auth state changes stream
   Stream<User?> get authStateChanges => _auth.authStateChanges();
 
-  // Sign up with email and password
-  Future<UserCredential?> signUpWithEmailAndPassword({
+  // Kullanıcı adını tutmak için map
+  static final Map<String, String> _userDisplayNames = {};
+
+  // Kayıt metodu - Local storage kullan
+  Future<User?> signUpWithEmailAndPassword({
     required String email,
     required String password,
     required String displayName,
   }) async {
     try {
-      developer.log("Kayıt işlemi başladı: $email", name: 'AuthService');
+      developer.log(
+        '🔥 KAYIT BAŞLIYOR - Email: $email, DisplayName: $displayName',
+        name: 'AuthService',
+      );
 
-      // Create user
-      UserCredential result = await _auth.createUserWithEmailAndPassword(
+      // Kullanıcı oluştur
+      final UserCredential result = await _auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
 
+      final User? user = result.user;
       developer.log(
-        "Firebase Auth'da kullanıcı oluşturuldu: ${result.user?.uid}",
+        '✅ Kullanıcı oluşturuldu: ${user?.uid}',
         name: 'AuthService',
       );
 
-      // Update display name
-      if (result.user != null) {
-        await result.user!.updateDisplayName(displayName);
+      if (user != null) {
+        // DisplayName'i local map'te sakla (Firebase hatası nedeniyle)
+        _userDisplayNames[user.uid] = displayName;
         developer.log(
-          "Display name güncellendi: $displayName",
+          '💾 DisplayName local olarak saklandı: $displayName',
           name: 'AuthService',
         );
+
+        return user;
       }
 
-      // Firestore işlemini arka planda yap
-      _createUserDocument(result.user!, email, displayName);
-
-      developer.log("Kayıt işlemi başarılı!", name: 'AuthService');
-      return result;
-    } on FirebaseAuthException catch (e) {
-      developer.log(
-        "FirebaseAuth Error: ${e.code} - ${e.message}",
-        name: 'AuthService',
-        level: 1000,
-      );
       return null;
     } catch (e) {
-      developer.log("Genel hata: $e", name: 'AuthService', level: 1000);
+      developer.log('❌ Kayıt hatası: $e', name: 'AuthService');
       return null;
     }
   }
 
-  // Firestore işlemi
-  Future<void> _createUserDocument(
-    User user,
-    String email,
-    String displayName,
-  ) async {
-    try {
-      await _firestore.collection('users').doc(user.uid).set({
-        'uid': user.uid,
-        'email': email,
-        'displayName': displayName,
-        'createdAt': FieldValue.serverTimestamp(),
-        'favoriteGames': [],
-        'reviews': [],
-        'profileImageUrl': '',
-      });
-      developer.log(
-        "Firestore'da kullanıcı dökümanı oluşturuldu",
-        name: 'AuthService',
-      );
-    } catch (e) {
-      developer.log(
-        "Firestore'a yazma hatası: $e",
-        name: 'AuthService',
-        level: 900,
-      );
+  // DisplayName'i al (local storage'dan)
+  String? getDisplayName() {
+    final user = _auth.currentUser;
+    if (user != null) {
+      final displayName = _userDisplayNames[user.uid];
+      developer.log('📖 DisplayName alındı: $displayName', name: 'AuthService');
+      return displayName;
     }
+    return null;
   }
 
-  // Sign in with email and password
-  Future<UserCredential?> signInWithEmailAndPassword({
+  // Giriş metodu
+  Future<User?> signInWithEmailAndPassword({
     required String email,
     required String password,
   }) async {
     try {
-      developer.log("Giriş işlemi başladı: $email", name: 'AuthService');
-
-      UserCredential result = await _auth.signInWithEmailAndPassword(
+      final UserCredential result = await _auth.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
-
-      developer.log(
-        "Giriş başarılı: ${result.user?.email}",
-        name: 'AuthService',
-      );
-      return result;
-    } on FirebaseAuthException catch (e) {
-      developer.log(
-        "Giriş hatası: ${e.code} - ${e.message}",
-        name: 'AuthService',
-        level: 1000,
-      );
-      return null;
+      return result.user;
     } catch (e) {
-      developer.log("Genel giriş hatası: $e", name: 'AuthService', level: 1000);
+      developer.log('❌ Giriş hatası: $e', name: 'AuthService');
       return null;
     }
   }
 
-  // Sign out
-  Future<void> signOut() async {
-    try {
-      developer.log("SignOut metodu çağrıldı", name: 'AuthService');
-      await _auth.signOut();
-      developer.log("Firebase signOut tamamlandı", name: 'AuthService');
-    } catch (e) {
-      developer.log("SignOut hatası: $e", name: 'AuthService', level: 1000);
-      rethrow;
-    }
-  }
-
-  // Get user data from Firestore
-  Future<DocumentSnapshot?> getUserData() async {
+  // DisplayName güncelleme metodu (local storage)
+  Future<bool> updateDisplayName(String newDisplayName) async {
     try {
       final user = _auth.currentUser;
-      if (user == null) return null;
-
-      return await _firestore.collection('users').doc(user.uid).get();
+      if (user != null) {
+        _userDisplayNames[user.uid] = newDisplayName;
+        developer.log(
+          '✅ DisplayName manuel güncellendi: $newDisplayName',
+          name: 'AuthService',
+        );
+        return true;
+      }
+      return false;
     } catch (e) {
-      developer.log(
-        "Get user data error: $e",
-        name: 'AuthService',
-        level: 1000,
-      );
-      return null;
+      developer.log('❌ DisplayName güncelleme hatası: $e', name: 'AuthService');
+      return false;
     }
   }
 
-  // Reset password
-  Future<bool> resetPassword(String email) async {
+  // Çıkış metodu
+  Future<void> signOut() async {
     try {
-      await _auth.sendPasswordResetEmail(email: email);
-      return true;
-    } on FirebaseAuthException catch (e) {
-      developer.log(
-        "Reset password error: ${e.code} - ${e.message}",
-        name: 'AuthService',
-        level: 1000,
-      );
-      return false;
+      return await _auth.signOut();
     } catch (e) {
-      developer.log(
-        "Reset password error: $e",
-        name: 'AuthService',
-        level: 1000,
-      );
-      return false;
+      developer.log('❌ Çıkış hatası: $e', name: 'AuthService');
     }
   }
 }

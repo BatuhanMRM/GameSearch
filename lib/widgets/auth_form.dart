@@ -166,7 +166,21 @@ class _AuthFormState extends State<AuthForm> {
                 width: double.infinity,
                 height: 56,
                 child: ElevatedButton(
-                  onPressed: widget.isLoading ? null : _handleSubmit,
+                  onPressed: () {
+                    if (_formKey.currentState!.validate()) {
+                      if (!widget.isLoading) {
+                        widget.onSubmit(
+                          _emailController.text.trim(),
+                          _passwordController.text.trim(),
+                          _isLogin, // isLogin parametresi
+                          _isLogin
+                              ? null
+                              : _usernameController.text
+                                    .trim(), // displayName parametresi
+                        );
+                      }
+                    }
+                  },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF667eea),
                     foregroundColor: Colors.white,
@@ -197,17 +211,6 @@ class _AuthFormState extends State<AuthForm> {
           ),
         ),
       ),
-    );
-  }
-
-  void _handleSubmit() {
-    if (!_formKey.currentState!.validate()) return;
-
-    widget.onSubmit(
-      _emailController.text.trim(),
-      _passwordController.text,
-      _isLogin,
-      _isLogin ? null : _usernameController.text.trim(),
     );
   }
 

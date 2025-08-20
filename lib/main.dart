@@ -1,9 +1,11 @@
 import 'dart:developer' as developer;
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:game_reviews_2/screens/profile_screen.dart';
 import 'package:game_reviews_2/screens/settings_screen.dart';
+import 'package:game_reviews_2/widgets/price_filter_drawer.dart';
 import 'screens/categories_screen.dart';
 import 'screens/favorites_screen.dart';
 import 'screens/auth_screen.dart';
@@ -15,16 +17,20 @@ void main() async {
 
   try {
     await Firebase.initializeApp();
-    developer.log("Firebase başarıyla başlatıldı", name: 'Firebase');
+    if (kDebugMode) {
+      developer.log("Firebase başarıyla başlatıldı", name: 'Firebase');
+    }
   } catch (e) {
-    developer.log(
-      "Firebase başlatma hatası: $e",
-      name: 'Firebase',
-      level: 1000,
-    );
+    if (kDebugMode) {
+      developer.log(
+        "Firebase başlatma hatası: $e",
+        name: 'Firebase',
+        level: 1000,
+      );
+    }
   }
 
-  runApp(GameApp());
+  runApp(const GameApp());
 }
 
 class GameApp extends StatefulWidget {
@@ -34,12 +40,49 @@ class GameApp extends StatefulWidget {
   State<GameApp> createState() => _GameAppState();
 }
 
-class _GameAppState extends State<GameApp> {
-  final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
+class _GameAppState extends State<GameApp> with TickerProviderStateMixin {
+  // Tek seferlik key'ler
+  static final GlobalKey<NavigatorState> _navigatorKey =
+      GlobalKey<NavigatorState>();
+  static final GlobalKey<ScaffoldState> _scaffoldKey =
+      GlobalKey<ScaffoldState>();
+
   final List<Game> _favoriteGames = [];
   final AuthService _authService = AuthService();
+
   ThemeMode _themeMode = ThemeMode.light;
   int _selectedIndex = 0;
+  String _selectedPriceFilter = 'Tümü';
+
+  // Cache edilmiş widget'lar - late kaldır, nullable yap
+  List<Widget>? _pages;
+  PriceFilterDrawer? _cachedDrawer;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializePages();
+  }
+
+  void _initializePages() {
+    _pages = [
+      CategoriesScreen(
+        onToggleFavorite: toggleFavorite,
+        favorites: _favoriteGames,
+        selectedPriceFilter: _selectedPriceFilter,
+        onFilterChanged: _onFilterChanged,
+      ),
+      FavoritesScreen(favorites: _favoriteGames),
+    ];
+  }
+
+  // Pages'i al - her seferinde kontrol et
+  List<Widget> _getPages() {
+    if (_pages == null) {
+      _initializePages();
+    }
+    return _pages!;
+  }
 
   void toggleFavorite(Game game) {
     setState(() {
@@ -57,30 +100,44 @@ class _GameAppState extends State<GameApp> {
     });
   }
 
-  // Logout işlemini ayrı metoda alın - Context güvenli
+  void _onFilterChanged(String filter) {
+    if (_selectedPriceFilter != filter) {
+      setState(() {
+        _selectedPriceFilter = filter;
+        // Cache'leri koru, sadece güncelle
+        if (_cachedDrawer != null) {
+          _cachedDrawer = null; // Yeni filter ile güncellenecek
+        }
+        // Pages'i koruyalım, rebuild'i önleyelim
+      });
+
+      // Log'u sadece debug mode'da çalıştır
+      if (kDebugMode) {
+        developer.log("Price filter değişti: $filter", name: 'MainApp');
+      }
+    }
+  }
+
   Future<void> _handleLogoutPress(BuildContext context) async {
-    developer.log("Çıkış butonuna tıklandı!", name: 'MainApp');
+    if (kDebugMode) {
+      developer.log("Çıkış butonuna tıklandı!", name: 'MainApp');
+    }
 
     try {
-      // mounted kontrolü ekleyin
-      if (!mounted) {
-        developer.log("Widget dispose olmuş, çıkış iptal", name: 'MainApp');
-        return;
-      }
+      if (!mounted) return;
 
       await _authService.signOut();
 
-      // Async işlem sonrası mounted kontrolü
-      if (!mounted) {
-        developer.log("Async sonrası widget dispose olmuş", name: 'MainApp');
-        return;
+      if (!mounted) return;
+
+      if (kDebugMode) {
+        developer.log("Çıkış başarılı", name: 'MainApp');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        developer.log("Çıkış hatası: $e", name: 'MainApp', level: 1000);
       }
 
-      developer.log("Çıkış başarılı", name: 'MainApp');
-    } catch (e) {
-      developer.log("Çıkış hatası: $e", name: 'MainApp', level: 1000);
-
-      // Hata durumunda da mounted kontrolü
       if (!mounted || !context.mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -90,6 +147,99 @@ class _GameAppState extends State<GameApp> {
         ),
       );
     }
+  }
+
+  // Drawer'ı cache'le
+  PriceFilterDrawer _getDrawer() {
+    _cachedDrawer ??= PriceFilterDrawer(
+      selectedPriceFilter: _selectedPriceFilter,
+      onFilterChanged: _onFilterChanged,
+    );
+    return _cachedDrawer!;
+  }
+
+  // AppBar actions'ları optimize et
+  List<Widget> _buildActions(User user) {
+    return [
+      Builder(
+        builder: (context) => IconButton(
+          icon: const Icon(Icons.person),
+          onPressed: () => Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => ProfileScreen(email: user.email ?? ''),
+            ),
+          ),
+        ),
+      ),
+      Builder(
+        builder: (context) => IconButton(
+          icon: const Icon(Icons.settings),
+          onPressed: () => Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => SettingsScreen(
+                isDarkMode: _themeMode == ThemeMode.dark,
+                onThemeChanged: changeTheme,
+              ),
+            ),
+          ),
+        ),
+      ),
+      Builder(
+        builder: (context) => IconButton(
+          icon: const Icon(Icons.logout),
+          onPressed: () => _handleLogoutPress(context),
+        ),
+      ),
+    ];
+  }
+
+  // Butik filter iconu
+  Widget? _buildFilterIcon() {
+    if (_selectedIndex != 0) return null;
+
+    return Container(
+      margin: const EdgeInsets.only(right: 8),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(24),
+          onTap: () => _scaffoldKey.currentState?.openDrawer(),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Theme.of(context).primaryColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(
+                color: Theme.of(context).primaryColor.withOpacity(0.2),
+                width: 1,
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.tune,
+                  color: Theme.of(context).primaryColor,
+                  size: 20,
+                ),
+                if (_selectedPriceFilter != 'Tümü') ...[
+                  const SizedBox(width: 4),
+                  Container(
+                    width: 6,
+                    height: 6,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).primaryColor,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -108,32 +258,20 @@ class _GameAppState extends State<GameApp> {
       home: StreamBuilder<User?>(
         stream: _authService.authStateChanges,
         builder: (context, snapshot) {
-          developer.log(
-            "StreamBuilder tetiklendi - Data: ${snapshot.data?.email}",
-            name: 'MainApp',
-          );
+          // Debug log'u optimize et
+          if (kDebugMode && snapshot.hasData && snapshot.data?.email != null) {
+            developer.log("User: ${snapshot.data!.email}", name: 'Auth');
+          }
 
+          // Loading state
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Scaffold(
-              body: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    CircularProgressIndicator(),
-                    SizedBox(height: 16),
-                    Text('Yükleniyor...'),
-                  ],
-                ),
-              ),
+              body: Center(child: CircularProgressIndicator()),
             );
           }
 
+          // Error state
           if (snapshot.hasError) {
-            developer.log(
-              "StreamBuilder hatası: ${snapshot.error}",
-              name: 'MainApp',
-              level: 1000,
-            );
             return Scaffold(
               body: Center(
                 child: Column(
@@ -149,86 +287,49 @@ class _GameAppState extends State<GameApp> {
           }
 
           final user = snapshot.data;
-
-          if (user != null) {
-            developer.log(
-              "Kullanıcı var, ana ekran gösteriliyor: ${user.email}",
-              name: 'MainApp',
-            );
-            return _buildMainScreen(user);
-          } else {
-            developer.log(
-              "Kullanıcı yok, auth ekranı gösteriliyor",
-              name: 'MainApp',
-            );
-            return const AuthScreen();
-          }
+          return user != null ? _buildMainScreen(user) : const AuthScreen();
         },
       ),
     );
   }
 
   Widget _buildMainScreen(User user) {
-    final pages = [
-      CategoriesScreen(
-        onToggleFavorite: toggleFavorite,
-        favorites: _favoriteGames,
-      ),
-      FavoritesScreen(favorites: _favoriteGames),
-    ];
-
     return Scaffold(
+      key: _scaffoldKey,
+      drawer: _selectedIndex == 0 ? _getDrawer() : null,
       appBar: AppBar(
-        title: Text(_selectedIndex == 0 ? 'Game Search' : 'Favoriler'),
-        actions: [
-          // Profile button - Builder ile context'i koruyalım
-          Builder(
-            builder: (BuildContext context) {
-              return IconButton(
-                icon: const Icon(Icons.person),
-                onPressed: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (ctx) => ProfileScreen(email: user.email ?? ''),
-                    ),
-                  );
-                },
-              );
-            },
-          ),
-          // Settings button - Builder ile context'i koruyalım
-          Builder(
-            builder: (BuildContext context) {
-              return IconButton(
-                icon: const Icon(Icons.settings),
-                onPressed: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (ctx) => SettingsScreen(
-                        isDarkMode: _themeMode == ThemeMode.dark,
-                        onThemeChanged: changeTheme,
-                      ),
-                    ),
-                  );
-                },
-              );
-            },
-          ),
-          // Logout button - Güvenli context kontrolü ile
-          Builder(
-            builder: (BuildContext context) {
-              return IconButton(
-                icon: const Icon(Icons.logout),
-                onPressed: () => _handleLogoutPress(context),
-              );
-            },
-          ),
-        ],
+        automaticallyImplyLeading: false,
+        title: Row(
+          children: [
+            if (_buildFilterIcon() != null) ...[
+              _buildFilterIcon()!,
+              const SizedBox(width: 4),
+            ],
+            Transform.translate(
+              offset: const Offset(-8, 0),
+              child: Text(
+                _selectedIndex == 0 ? 'Game Search' : 'Favoriler',
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: _buildActions(user),
       ),
-      body: IndexedStack(index: _selectedIndex, children: pages),
+      body: IndexedStack(
+        index: _selectedIndex,
+        children: _getPages(), // _pages yerine _getPages() kullan
+      ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
-        onTap: (index) => setState(() => _selectedIndex = index),
+        onTap: (index) {
+          if (_selectedIndex != index) {
+            setState(() => _selectedIndex = index);
+          }
+        },
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.list), label: "Game Search"),
           BottomNavigationBarItem(
@@ -238,5 +339,13 @@ class _GameAppState extends State<GameApp> {
         ],
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    // Cleanup
+    _cachedDrawer = null;
+    _pages = null;
+    super.dispose();
   }
 }
