@@ -12,6 +12,9 @@ import 'screens/auth_screen.dart';
 import 'services/auth_service.dart';
 import 'models/game.dart';
 
+// Global filter state notifier
+final ValueNotifier<String> globalPriceFilter = ValueNotifier<String>('Tümü');
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -71,9 +74,15 @@ class _GameAppState extends State<GameApp> with TickerProviderStateMixin {
         favorites: _favoriteGames,
         selectedPriceFilter: _selectedPriceFilter,
         onFilterChanged: _onFilterChanged,
+        onOpenFilterDrawer: _openFilterDrawer, // Filter drawer açma callback'i
       ),
       FavoritesScreen(favorites: _favoriteGames),
     ];
+  }
+
+  // Filter drawer açma metodu
+  void _openFilterDrawer() {
+    _scaffoldKey.currentState?.openDrawer();
   }
 
   // Pages'i al - her seferinde kontrol et
@@ -110,6 +119,9 @@ class _GameAppState extends State<GameApp> with TickerProviderStateMixin {
         }
         // Pages'i koruyalım, rebuild'i önleyelim
       });
+
+      // Global filter notifier'ı güncelle
+      globalPriceFilter.value = filter;
 
       // Log'u sadece debug mode'da çalıştır
       if (kDebugMode) {
@@ -208,10 +220,10 @@ class _GameAppState extends State<GameApp> with TickerProviderStateMixin {
             duration: const Duration(milliseconds: 200),
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: Theme.of(context).primaryColor.withOpacity(0.1),
+              color: Theme.of(context).primaryColor.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(24),
               border: Border.all(
-                color: Theme.of(context).primaryColor.withOpacity(0.2),
+                color: Theme.of(context).primaryColor.withValues(alpha: 0.3),
                 width: 1,
               ),
             ),

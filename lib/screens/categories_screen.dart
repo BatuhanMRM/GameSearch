@@ -3,7 +3,6 @@ import 'dart:developer' as developer;
 import '../data/dummy_data.dart';
 import '../widgets/categories_grid.dart';
 import '../widgets/comment_section.dart';
-import '../widgets/price_filter_drawer.dart';
 import '../models/game.dart';
 import '../models/comment.dart';
 import 'friends_screen.dart';
@@ -13,6 +12,7 @@ class CategoriesScreen extends StatefulWidget {
   final List<Game> favorites;
   final String selectedPriceFilter; // Ekle
   final Function(String) onFilterChanged; // Ekle
+  final VoidCallback? onOpenFilterDrawer; // Filter drawer callback'i
 
   const CategoriesScreen({
     super.key,
@@ -20,6 +20,7 @@ class CategoriesScreen extends StatefulWidget {
     required this.favorites,
     required this.selectedPriceFilter, // Ekle
     required this.onFilterChanged, // Ekle
+    this.onOpenFilterDrawer,
   });
 
   @override
@@ -97,7 +98,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
               margin: const EdgeInsets.only(right: 16),
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
               decoration: BoxDecoration(
-                color: Theme.of(context).primaryColor.withOpacity(0.1),
+                color: Theme.of(context).primaryColor.withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
                   color: Theme.of(context).primaryColor,
@@ -144,6 +145,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
             onToggleFavorite: widget.onToggleFavorite,
             favorites: widget.favorites,
             selectedPriceFilter: widget.selectedPriceFilter, // Geçir
+            onOpenFilterDrawer: widget.onOpenFilterDrawer, // Callback'i geçir
           ),
 
           // Comment section

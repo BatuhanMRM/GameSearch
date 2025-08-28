@@ -228,7 +228,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
               String newName = nameController.text.trim();
               if (newName.isNotEmpty) {
                 await _updateDisplayName(newName);
-                Navigator.pop(context);
+                if (mounted) {
+                  Navigator.pop(context);
+                }
               }
             },
             child: Text('Kaydet'),
@@ -246,18 +248,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
         setState(() {
           _displayName = newName;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Adınız başarıyla güncellendi!')),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Adınız başarıyla güncellendi!')),
+          );
+        }
       } else {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Güncelleme başarısız!')));
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Güncelleme başarısız!')));
+        }
       }
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Hata: ${e.toString()}')));
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Hata: ${e.toString()}')));
+      }
     }
   }
 
@@ -269,7 +277,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.grey.withValues(alpha: 0.3),
             spreadRadius: 1,
             blurRadius: 5,
             offset: Offset(0, 2),
@@ -312,7 +320,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         leading: Container(
           padding: EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: (textColor ?? Colors.deepPurple).withOpacity(0.1),
+            color: (textColor ?? Colors.deepPurple).withValues(alpha: 0.3),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(icon, color: textColor ?? Colors.deepPurple),

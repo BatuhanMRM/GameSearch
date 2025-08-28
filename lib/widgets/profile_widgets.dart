@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:game_reviews_2/screens/settings_screen.dart';
 
 class ProfileHeader extends StatelessWidget {
   final String displayName;
@@ -21,7 +20,7 @@ class ProfileHeader extends StatelessWidget {
         gradient: LinearGradient(
           colors: [
             Theme.of(context).primaryColor,
-            Theme.of(context).primaryColor.withOpacity(0.8),
+            Theme.of(context).primaryColor.withValues(alpha: 0.3),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -29,7 +28,7 @@ class ProfileHeader extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Theme.of(context).primaryColor.withOpacity(0.3),
+            color: Theme.of(context).primaryColor.withValues(alpha: 0.3),
             blurRadius: 10,
             offset: const Offset(0, 5),
           ),
@@ -46,7 +45,7 @@ class ProfileHeader extends StatelessWidget {
               border: Border.all(color: Colors.white, width: 4),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.2),
+                  color: Colors.black.withValues(alpha: 0.3),
                   blurRadius: 10,
                   offset: const Offset(0, 5),
                 ),
@@ -87,7 +86,7 @@ class ProfileHeader extends StatelessWidget {
             email,
             style: TextStyle(
               fontSize: 16,
-              color: Colors.white.withOpacity(0.9),
+              color: Colors.white.withValues(alpha: 0.3),
             ),
             textAlign: TextAlign.center,
           ),
@@ -167,7 +166,7 @@ class _ProfileInfoRow extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: Theme.of(context).primaryColor.withOpacity(0.1),
+            color: Theme.of(context).primaryColor.withValues(alpha: 0.3),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(icon, size: 20, color: Theme.of(context).primaryColor),
@@ -321,6 +320,7 @@ class _SettingsOption extends StatelessWidget {
     required this.icon,
     required this.title,
     required this.onTap,
+    // ignore: unused_element_parameter
     this.isDestructive = false,
     this.trailing, // ✅ Trailing widget ekledik
   });

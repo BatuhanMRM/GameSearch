@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../models/friend.dart';
-import '../models/message.dart';
 import '../data/dummy_data.dart';
 import 'chat_screen.dart';
 

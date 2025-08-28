@@ -8,12 +8,14 @@ class CategoriesGrid extends StatelessWidget {
   final void Function(Game) onToggleFavorite;
   final List<Game> favorites;
   final String selectedPriceFilter;
+  final VoidCallback? onOpenFilterDrawer; // Filter drawer callback'i
 
   const CategoriesGrid({
     super.key,
     required this.onToggleFavorite,
     required this.favorites,
     required this.selectedPriceFilter,
+    this.onOpenFilterDrawer,
   });
 
   // Optimizasyon 1: Navigation'ı ayrı metoda al
@@ -30,6 +32,7 @@ class CategoriesGrid extends StatelessWidget {
           onToggleFavorite: onToggleFavorite,
           favorites: favorites,
           priceFilter: selectedPriceFilter,
+          onOpenFilterDrawer: onOpenFilterDrawer, // Callback'i geçir
         ),
       ),
     );
@@ -48,8 +51,8 @@ class CategoriesGrid extends StatelessWidget {
           onTap: () => _navigateToCategory(context, category.id),
           borderRadius: BorderRadius.circular(16),
           // Optimizasyon 3: Ripple effect'i optimize et
-          splashColor: Colors.white.withOpacity(0.3),
-          highlightColor: Colors.white.withOpacity(0.1),
+          splashColor: Colors.white.withValues(alpha: 0.3),
+          highlightColor: Colors.white.withValues(alpha: 0.3),
           child: Container(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(16),

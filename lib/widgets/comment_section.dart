@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:developer' as developer;
 import '../models/comment.dart';
-import '../models/game.dart';
 import '../data/dummy_data.dart';
 import '../screens/game_detail_screen.dart';
 
